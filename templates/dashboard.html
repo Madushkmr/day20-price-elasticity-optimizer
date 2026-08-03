@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Day 20 — Price Elasticity &amp; Promotion ROI Optimizer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.3/chart.umd.min.js"></script>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #0f1117; color: #e6e6e6; }
+  header { padding: 24px 32px; background: #161925; border-bottom: 1px solid #2a2e3f; }
+  h1 { margin: 0 0 4px 0; font-size: 22px; }
+  .sub { color: #9aa0b4; font-size: 14px; }
+  main { padding: 24px 32px; max-width: 1200px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .card { background: #161925; border: 1px solid #2a2e3f; border-radius: 10px; padding: 16px 18px; }
+  .card .label { color: #9aa0b4; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .card .value { font-size: 24px; font-weight: 600; margin-top: 6px; }
+  .narrative { background: #161925; border: 1px solid #2a2e3f; border-radius: 10px; padding: 18px 20px; line-height: 1.6; margin-bottom: 28px; color: #d6d9e6; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #2a2e3f; }
+  th { color: #9aa0b4; font-weight: 500; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+  .pos { color: #6fdc8c; }
+  .neg { color: #ff8a80; }
+  .chart-wrap { background: #161925; border: 1px solid #2a2e3f; border-radius: 10px; padding: 18px; margin-bottom: 28px; }
+  .empty { color: #9aa0b4; padding: 40px 0; text-align: center; }
+  code { background: #202436; padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Price Elasticity &amp; Promotion ROI Optimizer</h1>
+  <div class="sub">Day 20 of a daily AI-app series (BI focus) — budget-constrained promotion planning under estimation uncertainty</div>
+</header>
+<main>
+{% if latest %}
+  <div class="grid">
+    <div class="card">
+      <div class="label">Optimized incremental margin</div>
+      <div class="value pos">${{ "%.2f"|format(latest.total_incremental_margin) }}</div>
+    </div>
+    <div class="card">
+      <div class="label">Flat-baseline incremental margin</div>
+      <div class="value">${{ "%.2f"|format(latest.baseline_incremental_margin) }}</div>
+    </div>
+    <div class="card">
+      <div class="label">Budget used</div>
+      <div class="value">${{ "%.2f"|format(latest.total_discount_cost) }} / ${{ "%.2f"|format(latest.budget_cap) }}</div>
+    </div>
+    <div class="card">
+      <div class="label">P(optimized beats baseline)</div>
+      <div class="value">{{ "%.0f"|format(latest.prob_beats_baseline * 100) }}%</div>
+    </div>
+  </div>
+
+  <div class="narrative">{{ latest.narrative }}</div>
+
+  <div class="chart-wrap">
+    <canvas id="marginChart" height="90"></canvas>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Product</th><th>Category</th><th>Elasticity</th><th>Discount</th>
+        <th>Price</th><th>Predicted Units</th><th>Incremental Margin</th><th>Promo Cost</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for p in latest.products %}
+      <tr>
+        <td>{{ p.product_id }}</td>
+        <td>{{ p.category }}</td>
+        <td>{{ "%.2f"|format(p.elasticity) }}</td>
+        <td>{{ "%.0f"|format(p.discount_pct * 100) }}%</td>
+        <td>${{ "%.2f"|format(p.price) }}</td>
+        <td>{{ "%.0f"|format(p.predicted_units) }}</td>
+        <td class="{{ 'pos' if p.incremental_margin >= 0 else 'neg' }}">${{ "%.2f"|format(p.incremental_margin) }}</td>
+        <td>${{ "%.2f"|format(p.discount_cost) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <script>
+    const labels = {{ latest.products | map(attribute='product_id') | list | tojson }};
+    const margins = {{ latest.products | map(attribute='incremental_margin') | list | tojson }};
+    new Chart(document.getElementById('marginChart'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Projected incremental margin ($)',
+          data: margins,
+          backgroundColor: margins.map(m => m >= 0 ? '#6fdc8c' : '#ff8a80'),
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#e6e6e6' } } },
+        scales: {
+          x: { ticks: { color: '#9aa0b4' }, grid: { color: '#2a2e3f' } },
+          y: { ticks: { color: '#9aa0b4' }, grid: { color: '#2a2e3f' } }
+        }
+      }
+    });
+  </script>
+{% else %}
+  <div class="empty">
+    No runs yet. Trigger one with:<br><br>
+    <code>curl -X POST -H "X-API-Key: day20-demo-key" http://localhost:5000/api/run</code><br>
+    or <code>python cli.py compute</code>
+  </div>
+{% endif %}
+</main>
+</body>
+</html>
