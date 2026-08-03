@@ -1,0 +1,21 @@
+# Day 20 — Price Elasticity & Promotion ROI Optimizer settings
+
+optimizer:
+  # discretized candidate discount depths the optimizer can choose from, per product
+  discount_grid: [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
+  # total promotional budget cap for one planning cycle, in dollars of margin give-away
+  budget_cap: 15000.0
+
+elasticity:
+  bootstrap_iterations: 2000
+  confidence_level: 0.90
+  random_seed: 42
+
+simulation:
+  monte_carlo_iterations: 3000
+  random_seed: 7
+
+api:
+  # simple shared-secret API key required on POST/DELETE endpoints (see src/auth.py)
+  # override with the PRICING_API_KEY environment variable in real deployments
+  api_key: "day20-demo-key"
